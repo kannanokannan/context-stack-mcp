@@ -1,0 +1,23 @@
+{
+  "name": "context-stack-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only MCP endpoint for the Context Stack: ContextOps, ContextBoundary, Sthala, Griha, and canonical stack doctrine.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test/smoke.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-governance",
+    "context-governance",
+    "egress-governance",
+    "context-stack"
+  ]
+}

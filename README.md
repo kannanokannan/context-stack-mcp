@@ -1,0 +1,109 @@
+# context-stack-mcp
+
+Read-only MCP endpoint for the Context Stack: ContextOps, ContextBoundary, Sthala, Griha, and the canonical context-stack doctrine.
+
+> Probabilistic intelligence must operate inside deterministic governance boundaries.
+
+This server lets AI clients discover the stack, read canonical resources, choose the correct project entry point, and generate first-pass governance guidance without storing user answers.
+
+## Status
+
+v0.1 local implementation. Public deployment is planned for:
+
+```text
+https://mcp.context-stack.org/mcp
+```
+
+The root domain `context-stack.org` is reserved for the public website. The `mcp` subdomain should point to the runtime host later, not to GitHub Pages.
+
+## What It Exposes
+
+### Resources
+
+- `context-stack://overview`
+- `context-stack://glossary`
+- `context-stack://decisions`
+- `context-stack://contextops/framework`
+- `context-stack://contextops/manifest`
+- `context-stack://contextboundary/framework`
+- `context-stack://contextboundary/rationale`
+- `context-stack://sthala/spec`
+- `context-stack://griha/readme`
+
+### Tools
+
+- `get_stack_overview`
+- `get_project`
+- `recommend_project`
+- `get_glossary_term`
+- `list_stack_resources`
+
+### Prompts
+
+- `choose_stack_entry_point`
+- `run_contextops_assessment`
+- `classify_contextboundary_egress`
+- `map_sthala_deployment`
+- `build_ai_governance_adoption_plan`
+
+## Local Run
+
+Requires Node.js 20 or later.
+
+```bash
+npm test
+npm start
+```
+
+Health check:
+
+```bash
+curl http://127.0.0.1:8787/health
+```
+
+MCP initialize call:
+
+```bash
+curl -X POST http://127.0.0.1:8787/mcp \
+  -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}'
+```
+
+Tool call:
+
+```bash
+curl -X POST http://127.0.0.1:8787/mcp \
+  -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"recommend_project","arguments":{"question":"We need to govern data egress from an AI agent."}}}'
+```
+
+## Design Choices
+
+- Read-only by default.
+- No database.
+- No stored user prompts, assessment answers, or organization data.
+- Resources point to canonical GitHub project files.
+- Tools return guidance, not side effects.
+- The server does not replace any stack repo. It routes agents to the correct source.
+
+## Project Map
+
+| Project | Layer | Question |
+|---------|-------|----------|
+| context-stack | Canonical coordination | What terms, decisions, and doctrine govern the stack? |
+| ContextOps | Organizational context governance | How does an org govern its AI context? |
+| ContextBoundary | Egress governance | Where is data allowed to go? |
+| Sthala | Governed runtime reference | Where does the AI actually run? |
+| Griha | Product/adoption layer | How does governed AI become a working product layer? |
+
+## Deployment
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## Privacy
+
+See [docs/PRIVACY.md](docs/PRIVACY.md).
+
+## License
+
+Apache 2.0.

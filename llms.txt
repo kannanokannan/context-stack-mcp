@@ -1,0 +1,28 @@
+# context-stack-mcp
+
+> Read-only MCP endpoint for the Context Stack: ContextOps, ContextBoundary, Sthala, Griha, and canonical stack doctrine.
+
+context-stack-mcp exposes public resources, prompts, and safe guidance tools for AI clients. It does not store user prompts or assessment answers by default.
+
+License: Apache 2.0. Status: v0.1 local implementation.
+
+## Core
+
+- [README.md](https://github.com/kannanokannan/context-stack-mcp/blob/main/README.md): Project overview and local usage
+- [src/mcp/handler.js](https://github.com/kannanokannan/context-stack-mcp/blob/main/src/mcp/handler.js): MCP JSON-RPC method handler
+- [src/stack-catalog.js](https://github.com/kannanokannan/context-stack-mcp/blob/main/src/stack-catalog.js): Stack project catalog and resource map
+- [docs/DEPLOYMENT.md](https://github.com/kannanokannan/context-stack-mcp/blob/main/docs/DEPLOYMENT.md): Deployment and DNS notes
+- [docs/PRIVACY.md](https://github.com/kannanokannan/context-stack-mcp/blob/main/docs/PRIVACY.md): Privacy posture
+- [SECURITY.md](https://github.com/kannanokannan/context-stack-mcp/blob/main/SECURITY.md): Security posture and reporting
+
+## Related projects
+
+- [context-stack](https://github.com/kannanokannan/context-stack): Canonical terminology, locked decisions, and family framing
+- [ContextOps](https://github.com/kannanokannan/ContextOps): AI context governance framework
+- [ContextBoundary](https://github.com/kannanokannan/ContextBoundary): Egress governance specification for AI data flows
+- [Sthala](https://github.com/kannanokannan/Sthala): Sovereign on-prem AI reference framework
+- [Griha](https://github.com/kannanokannan/Griha): Product/adoption layer above the governance stack
+
+## Intended endpoint
+
+https://mcp.context-stack.org/mcp

@@ -15,8 +15,15 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? `${host}:${port}`}`);
+  const requestStart = Date.now();
+  let requestSummary = "";
+
+  res.on("finish", () => {
+    logRequest(req, url, res.statusCode, Date.now() - requestStart, requestSummary);
+  });
 
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
+    requestSummary = "route=health";
     sendJson(res, 200, {
       status: "ok",
       name: SERVER.name,
@@ -28,6 +35,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/mcp") {
+    requestSummary = "route=mcp-metadata";
     sendJson(res, 200, {
       name: SERVER.name,
       version: SERVER.version,
@@ -39,11 +47,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname !== "/mcp") {
+    requestSummary = "route=not-found";
     sendJson(res, 404, { error: "Not found" });
     return;
   }
 
   if (req.method !== "POST") {
+    requestSummary = "route=mcp method-not-allowed";
     sendJson(res, 405, { error: "Method not allowed" });
     return;
   }
@@ -51,7 +61,9 @@ const server = http.createServer(async (req, res) => {
   try {
     const body = await readBody(req);
     const payload = body.trim() ? JSON.parse(body) : null;
+    requestSummary = summarizeRpcPayload(payload);
     const response = await handleJsonRpc(payload);
+    requestSummary = `${requestSummary} outcome=${summarizeRpcResponse(response)}`;
 
     if (response === null) {
       res.writeHead(204);
@@ -61,6 +73,7 @@ const server = http.createServer(async (req, res) => {
 
     sendJson(res, 200, response);
   } catch (error) {
+    requestSummary ||= "rpc=parse-error";
     sendJson(res, 400, {
       jsonrpc: "2.0",
       id: null,
@@ -98,6 +111,75 @@ function sendJson(res, status, body) {
     "cache-control": "no-store"
   });
   res.end(data);
+}
+
+function logRequest(req, url, status, durationMs, summary) {
+  const kind = url.pathname === "/mcp" ? "mcp" : "http";
+  const parts = [
+    `${new Date().toISOString()}`,
+    kind,
+    `method=${req.method}`,
+    `path=${safeLogValue(url.pathname)}`,
+    `status=${status}`,
+    `duration_ms=${durationMs}`
+  ];
+
+  if (summary) parts.push(summary);
+  console.log(parts.join(" "));
+}
+
+function summarizeRpcPayload(payload) {
+  if (Array.isArray(payload)) {
+    const methods = payload
+      .map((item) => item?.method)
+      .filter(Boolean)
+      .map(safeLogValue)
+      .slice(0, 6)
+      .join(",");
+    return `rpc=batch count=${payload.length}${methods ? ` methods=${methods}` : ""}`;
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return "rpc=empty";
+  }
+
+  const method = safeLogValue(payload.method ?? "unknown");
+  const detail = rpcDetail(method, payload.params ?? {});
+  return `rpc=${method}${detail ? ` ${detail}` : ""}`;
+}
+
+function rpcDetail(method, params) {
+  if (method === "tools/call" && params.name) {
+    return `tool=${safeLogValue(params.name)}`;
+  }
+
+  if (method === "resources/read" && params.uri) {
+    return `resource=${safeLogValue(params.uri)}`;
+  }
+
+  if (method === "prompts/get" && params.name) {
+    return `prompt=${safeLogValue(params.name)}`;
+  }
+
+  return "";
+}
+
+function summarizeRpcResponse(response) {
+  if (response === null) {
+    return "notification";
+  }
+
+  if (Array.isArray(response)) {
+    return response.some((item) => item?.error) ? "error" : "ok";
+  }
+
+  return response?.error ? "error" : "ok";
+}
+
+function safeLogValue(value) {
+  return String(value)
+    .replace(/[^a-zA-Z0-9_:/.-]/g, "_")
+    .slice(0, 160);
 }
 
 function setCors(res) {

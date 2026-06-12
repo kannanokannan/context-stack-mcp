@@ -8,13 +8,17 @@ This server lets AI clients discover the stack, read canonical resources, choose
 
 ## Status
 
-v0.1 local implementation. Public deployment is planned for:
+v0.1 is live at:
 
 ```text
 https://mcp.context-stack.org/mcp
 ```
 
-The root domain `context-stack.org` is reserved for the public website. The `mcp` subdomain should point to the runtime host later, not to GitHub Pages.
+Health endpoint:
+
+```text
+https://mcp.context-stack.org/health
+```
 
 ## What It Exposes
 
@@ -77,6 +81,22 @@ curl -X POST http://127.0.0.1:8787/mcp \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"recommend_project","arguments":{"question":"We need to govern data egress from an AI agent."}}}'
 ```
 
+Live tool list:
+
+```bash
+curl -X POST https://mcp.context-stack.org/mcp \
+  -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+Live project recommendation:
+
+```bash
+curl -X POST https://mcp.context-stack.org/mcp \
+  -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"recommend_project","arguments":{"question":"We need to assess stale context after AMS handover."}}}'
+```
+
 ## Design Choices
 
 - Read-only by default.
@@ -85,6 +105,19 @@ curl -X POST http://127.0.0.1:8787/mcp \
 - Resources point to canonical GitHub project files.
 - Tools return guidance, not side effects.
 - The server does not replace any stack repo. It routes agents to the correct source.
+- The server is for discovery and decision support, not policy enforcement.
+
+## Privacy-Safe Logging
+
+The server logs method-level operational metadata only:
+
+```text
+mcp method=POST path=/mcp status=200 duration_ms=8 rpc=tools/list outcome=ok
+mcp method=POST path=/mcp status=200 duration_ms=14 rpc=tools/call tool=recommend_project outcome=ok
+mcp method=POST path=/mcp status=200 duration_ms=42 rpc=resources/read resource=context-stack://glossary outcome=ok
+```
+
+It does not log prompts, tool arguments, assessment answers, or organization-specific content.
 
 ## Project Map
 

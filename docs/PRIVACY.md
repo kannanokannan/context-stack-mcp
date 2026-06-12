@@ -15,12 +15,22 @@ This MCP server is designed to expose public Context Stack resources and safe gu
 A production deployment may collect aggregate operational metrics:
 
 - timestamp
-- method name, such as `tools/call` or `resources/read`
+- HTTP method and path
+- JSON-RPC method name, such as `tools/call` or `resources/read`
 - tool/resource/prompt name
-- success or failure
+- HTTP status and JSON-RPC outcome
+- request duration
 - server version
 
-Do not log full request bodies by default.
+The server must not log full request bodies by default.
+
+Examples:
+
+```text
+mcp method=POST path=/mcp status=200 duration_ms=8 rpc=tools/list outcome=ok
+mcp method=POST path=/mcp status=200 duration_ms=14 rpc=tools/call tool=recommend_project outcome=ok
+mcp method=POST path=/mcp status=200 duration_ms=42 rpc=resources/read resource=context-stack://glossary outcome=ok
+```
 
 ## Sensitive Inputs
 

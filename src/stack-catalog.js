@@ -65,7 +65,7 @@ export const projects = [
     question: "Where does the AI actually run?",
     status: "v0.1 Alpha",
     repo: `${gh}/Sthala`,
-    summary: "Sovereign on-premise AI reference framework. LLMs narrate; deterministic code computes.",
+    summary: "Governed AI runtime placement reference. LLMs narrate; deterministic code computes.",
     docs: [
       { label: "SPEC.md", url: `${gh}/Sthala/blob/main/SPEC.md` },
       { label: "AGENTS.md", url: `${gh}/Sthala/blob/main/AGENTS.md` },

@@ -20,7 +20,7 @@ License: Apache 2.0. Status: v0.1 local implementation.
 - [context-stack](https://github.com/kannanokannan/context-stack): Canonical terminology, locked decisions, and family framing
 - [ContextOps](https://github.com/kannanokannan/ContextOps): AI context governance framework
 - [ContextBoundary](https://github.com/kannanokannan/ContextBoundary): Egress governance specification for AI data flows
-- [Sthala](https://github.com/kannanokannan/Sthala): Sovereign on-prem AI reference framework
+- [Sthala](https://github.com/kannanokannan/Sthala): Governed AI runtime placement reference
 - [Griha](https://github.com/kannanokannan/Griha): Product/adoption layer above the governance stack
 
 ## Intended endpoint

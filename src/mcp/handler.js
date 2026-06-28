@@ -374,7 +374,7 @@ async function fetchGitHubFile(fileUrl, token) {
 function githubHeaders(token) {
   return {
     "accept": "application/vnd.github+json",
-    "authorization": `Bearer ${token}`,
+    "authorization": `token ${token}`,
     "content-type": "application/json",
     "user-agent": `${SERVER.name}/${SERVER.version}`,
     "x-github-api-version": "2022-11-28"

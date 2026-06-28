@@ -11,6 +11,8 @@ assert.equal(initialized.result.serverInfo.name, "context-stack-mcp");
 
 const tools = await handleJsonRpc({ jsonrpc: "2.0", id: 2, method: "tools/list" });
 assert.ok(tools.result.tools.some((tool) => tool.name === "recommend_project"));
+assert.ok(tools.result.tools.some((tool) => tool.name === "update_file"));
+assert.ok(tools.result.tools.some((tool) => tool.name === "create_file"));
 
 const recommendation = await handleJsonRpc({
   jsonrpc: "2.0",

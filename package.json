@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Read-only MCP endpoint for the Context Stack: ContextOps, ContextBoundary, Sthala, Griha, and canonical stack doctrine.",
+  "description": "Cloudflare Worker MCP endpoint for the Context Stack with canonical read tools and GitHub file write tools.",
   "license": "Apache-2.0",
   "scripts": {
-    "start": "node src/server.js",
-    "test": "node test/smoke.mjs"
+    "start": "wrangler dev",
+    "start:node": "node src/server.js",
+    "test": "node test/smoke.mjs",
+    "deploy": "wrangler deploy"
   },
   "engines": {
     "node": ">=20"

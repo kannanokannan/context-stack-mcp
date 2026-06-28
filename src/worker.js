@@ -1,0 +1,172 @@
+import { SERVER } from "./stack-catalog.js";
+import { handleJsonRpc } from "./mcp/handler.js";
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const requestStart = Date.now();
+    let requestSummary = "";
+
+    try {
+      if (request.method === "OPTIONS") {
+        return withCors(new Response(null, { status: 204 }));
+      }
+
+      if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
+        requestSummary = "route=health";
+        return jsonResponse({
+          status: "ok",
+          name: SERVER.name,
+          version: SERVER.version,
+          doctrine: SERVER.doctrine,
+          mcp: "/mcp"
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/mcp") {
+        requestSummary = "route=mcp-metadata";
+        return jsonResponse({
+          name: SERVER.name,
+          version: SERVER.version,
+          protocolVersion: SERVER.protocolVersion,
+          transport: "streamable-http-json-rpc",
+          note: "Send JSON-RPC POST requests to this endpoint."
+        });
+      }
+
+      if (url.pathname !== "/mcp") {
+        requestSummary = "route=not-found";
+        return jsonResponse({ error: "Not found" }, { status: 404 });
+      }
+
+      if (request.method !== "POST") {
+        requestSummary = "route=mcp method-not-allowed";
+        return jsonResponse({ error: "Method not allowed" }, { status: 405 });
+      }
+
+      const body = await readBody(request);
+      const payload = body.trim() ? JSON.parse(body) : null;
+      requestSummary = summarizeRpcPayload(payload);
+      const response = await handleJsonRpc(payload, { env });
+      requestSummary = `${requestSummary} outcome=${summarizeRpcResponse(response)}`;
+
+      if (response === null) {
+        return withCors(new Response(null, { status: 204 }));
+      }
+
+      return jsonResponse(response);
+    } catch (error) {
+      requestSummary ||= "rpc=parse-error";
+      return jsonResponse({
+        jsonrpc: "2.0",
+        id: null,
+        error: {
+          code: -32700,
+          message: error.message ?? "Parse error"
+        }
+      }, { status: 400 });
+    } finally {
+      logRequest(request, url, Date.now() - requestStart, requestSummary);
+    }
+  }
+};
+
+async function readBody(request) {
+  const body = await request.text();
+  if (body.length > 1_000_000) {
+    throw new Error("Request body too large");
+  }
+  return body;
+}
+
+function jsonResponse(body, init = {}) {
+  return withCors(new Response(JSON.stringify(body, null, 2), {
+    status: init.status ?? 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      ...(init.headers ?? {})
+    }
+  }));
+}
+
+function withCors(response) {
+  const headers = new Headers(response.headers);
+  headers.set("access-control-allow-origin", "*");
+  headers.set("access-control-allow-methods", "GET,POST,OPTIONS");
+  headers.set("access-control-allow-headers", "content-type, mcp-session-id, mcp-protocol-version");
+  headers.set("access-control-expose-headers", "mcp-session-id");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
+function logRequest(request, url, durationMs, summary) {
+  const kind = url.pathname === "/mcp" ? "mcp" : "http";
+  const parts = [
+    `${new Date().toISOString()}`,
+    kind,
+    `method=${request.method}`,
+    `path=${safeLogValue(url.pathname)}`,
+    `duration_ms=${durationMs}`
+  ];
+
+  if (summary) parts.push(summary);
+  console.log(parts.join(" "));
+}
+
+function summarizeRpcPayload(payload) {
+  if (Array.isArray(payload)) {
+    const methods = payload
+      .map((item) => item?.method)
+      .filter(Boolean)
+      .map(safeLogValue)
+      .slice(0, 6)
+      .join(",");
+    return `rpc=batch count=${payload.length}${methods ? ` methods=${methods}` : ""}`;
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return "rpc=empty";
+  }
+
+  const method = safeLogValue(payload.method ?? "unknown");
+  const detail = rpcDetail(method, payload.params ?? {});
+  return `rpc=${method}${detail ? ` ${detail}` : ""}`;
+}
+
+function rpcDetail(method, params) {
+  if (method === "tools/call" && params.name) {
+    return `tool=${safeLogValue(params.name)}`;
+  }
+
+  if (method === "resources/read" && params.uri) {
+    return `resource=${safeLogValue(params.uri)}`;
+  }
+
+  if (method === "prompts/get" && params.name) {
+    return `prompt=${safeLogValue(params.name)}`;
+  }
+
+  return "";
+}
+
+function summarizeRpcResponse(response) {
+  if (response === null) {
+    return "notification";
+  }
+
+  if (Array.isArray(response)) {
+    return response.some((item) => item?.error) ? "error" : "ok";
+  }
+
+  return response?.error ? "error" : "ok";
+}
+
+function safeLogValue(value) {
+  return String(value)
+    .replace(/[^a-zA-Z0-9_:/.-]/g, "_")
+    .slice(0, 160);
+}

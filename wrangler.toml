@@ -1,0 +1,8 @@
+name = "context-stack-mcp"
+main = "src/worker.js"
+compatibility_date = "2026-06-28"
+
+routes = [
+  { pattern = "mcp.context-stack.org/mcp*", zone_name = "context-stack.org" },
+  { pattern = "mcp.context-stack.org/health", zone_name = "context-stack.org" }
+]

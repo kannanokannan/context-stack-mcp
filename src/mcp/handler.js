@@ -74,6 +74,62 @@ export const tools = [
       additionalProperties: false,
       properties: {}
     }
+  },
+  {
+    name: "update_file",
+    title: "Update GitHub File",
+    description: "Update an existing file in a kannanokannan GitHub repo using the Worker GITHUB_TOKEN secret.",
+    inputSchema: {
+      type: "object",
+      required: ["repo", "path", "content", "message"],
+      additionalProperties: false,
+      properties: {
+        repo: {
+          type: "string",
+          description: "Repository name under owner kannanokannan."
+        },
+        path: {
+          type: "string",
+          description: "File path inside the repository."
+        },
+        content: {
+          type: "string",
+          description: "Full replacement file content."
+        },
+        message: {
+          type: "string",
+          description: "Commit message for the file update."
+        }
+      }
+    }
+  },
+  {
+    name: "create_file",
+    title: "Create GitHub File",
+    description: "Create a new file in a kannanokannan GitHub repo using the Worker GITHUB_TOKEN secret.",
+    inputSchema: {
+      type: "object",
+      required: ["repo", "path", "content", "message"],
+      additionalProperties: false,
+      properties: {
+        repo: {
+          type: "string",
+          description: "Repository name under owner kannanokannan."
+        },
+        path: {
+          type: "string",
+          description: "New file path inside the repository."
+        },
+        content: {
+          type: "string",
+          description: "File content."
+        },
+        message: {
+          type: "string",
+          description: "Commit message for the file creation."
+        }
+      }
+    }
   }
 ];
 
@@ -120,20 +176,20 @@ export const prompts = [
   }
 ];
 
-export async function handleJsonRpc(payload) {
+export async function handleJsonRpc(payload, context = {}) {
   if (Array.isArray(payload)) {
     const responses = [];
     for (const item of payload) {
-      const response = await handleSingle(item);
+      const response = await handleSingle(item, context);
       if (response) responses.push(response);
     }
     return responses.length ? responses : null;
   }
 
-  return handleSingle(payload);
+  return handleSingle(payload, context);
 }
 
-async function handleSingle(request) {
+async function handleSingle(request, context) {
   if (!request || request.jsonrpc !== JSON_RPC || typeof request.method !== "string") {
     return rpcError(request?.id ?? null, -32600, "Invalid JSON-RPC request.");
   }
@@ -142,7 +198,7 @@ async function handleSingle(request) {
   const isNotification = id === undefined;
 
   try {
-    const result = await routeMethod(request.method, request.params ?? {});
+    const result = await routeMethod(request.method, request.params ?? {}, context);
     if (isNotification) return null;
     return { jsonrpc: JSON_RPC, id, result };
   } catch (error) {
@@ -151,7 +207,7 @@ async function handleSingle(request) {
   }
 }
 
-async function routeMethod(method, params) {
+async function routeMethod(method, params, context) {
   switch (method) {
     case "initialize":
       return {
@@ -192,7 +248,7 @@ async function routeMethod(method, params) {
       return { tools };
 
     case "tools/call":
-      return callTool(params);
+      return callTool(params, context);
 
     case "prompts/list":
       return { prompts };
@@ -221,7 +277,7 @@ async function readResource(params) {
   };
 }
 
-async function callTool(params) {
+async function callTool(params, context = {}) {
   const name = params.name;
   const args = params.arguments ?? {};
 
@@ -241,9 +297,127 @@ async function callTool(params) {
     case "list_stack_resources":
       return textResult(resources.map((resource) => `- ${resource.uri}: ${resource.title}`).join("\n"));
 
+    case "update_file":
+      return textResult(await writeGitHubFile(args, context, { mode: "update" }));
+
+    case "create_file":
+      return textResult(await writeGitHubFile(args, context, { mode: "create" }));
+
     default:
       throw invalidParams(`Unknown tool: ${name}`);
   }
+}
+
+async function writeGitHubFile(args, context, options) {
+  const repo = validateRepo(args.repo);
+  const path = validatePath(args.path);
+  const content = validateString(args.content, "content");
+  const message = validateString(args.message, "message");
+  const token = context?.env?.GITHUB_TOKEN;
+
+  if (!token) {
+    throw invalidParams("GITHUB_TOKEN Worker secret is not configured.");
+  }
+
+  const owner = "kannanokannan";
+  const fileUrl = `https://api.github.com/repos/${owner}/${encodeURIComponent(repo)}/contents/${encodeGitHubPath(path)}`;
+  const current = await fetchGitHubFile(fileUrl, token);
+
+  if (options.mode === "create" && current.exists) {
+    throw invalidParams(`File already exists: ${repo}/${path}`);
+  }
+
+  if (options.mode === "update" && !current.exists) {
+    throw invalidParams(`File does not exist: ${repo}/${path}`);
+  }
+
+  const payload = {
+    message,
+    content: utf8ToBase64(content),
+    ...(options.mode === "update" ? { sha: current.sha } : {})
+  };
+
+  const response = await fetch(fileUrl, {
+    method: "PUT",
+    headers: githubHeaders(token),
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw invalidParams(`GitHub ${options.mode} failed for ${repo}/${path}: ${data.message ?? response.status}`);
+  }
+
+  const commitSha = data.commit?.sha ?? "unknown";
+  const commitUrl = data.commit?.html_url ?? `https://github.com/${owner}/${repo}/commit/${commitSha}`;
+  const htmlUrl = data.content?.html_url ?? `https://github.com/${owner}/${repo}/blob/main/${path}`;
+  return `${options.mode === "create" ? "Created" : "Updated"} ${owner}/${repo}/${path}\nCommit: ${commitSha}\nCommit URL: ${commitUrl}\nFile URL: ${htmlUrl}`;
+}
+
+async function fetchGitHubFile(fileUrl, token) {
+  const response = await fetch(fileUrl, {
+    headers: githubHeaders(token)
+  });
+
+  if (response.status === 404) {
+    return { exists: false };
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw invalidParams(`Could not read current GitHub file state: ${data.message ?? response.status}`);
+  }
+
+  return { exists: true, sha: data.sha };
+}
+
+function githubHeaders(token) {
+  return {
+    "accept": "application/vnd.github+json",
+    "authorization": `Bearer ${token}`,
+    "content-type": "application/json",
+    "user-agent": `${SERVER.name}/${SERVER.version}`,
+    "x-github-api-version": "2022-11-28"
+  };
+}
+
+function validateRepo(repo) {
+  const value = validateString(repo, "repo").trim();
+  if (!/^[A-Za-z0-9._-]+$/.test(value)) {
+    throw invalidParams("repo must be a repository name under owner kannanokannan.");
+  }
+  return value;
+}
+
+function validatePath(path) {
+  const value = validateString(path, "path").replace(/\\/g, "/").replace(/^\/+/, "");
+  const parts = value.split("/");
+  if (!value || parts.some((part) => !part || part === "." || part === "..")) {
+    throw invalidParams("path must be a repository-relative file path.");
+  }
+  return value;
+}
+
+function validateString(value, name) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw invalidParams(`${name} must be a non-empty string.`);
+  }
+  return value;
+}
+
+function encodeGitHubPath(path) {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+function utf8ToBase64(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    const chunk = bytes.subarray(index, index + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
 }
 
 function getPrompt(params) {

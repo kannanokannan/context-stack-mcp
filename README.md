@@ -1,10 +1,10 @@
 # context-stack-mcp
 
-Read-only MCP endpoint for the Context Stack: ContextOps, ContextBoundary, Sthala, Griha, and the canonical context-stack doctrine.
+Cloudflare Worker MCP endpoint for the Context Stack: ContextOps, ContextBoundary, Sthala, Griha, and the canonical context-stack doctrine.
 
 > Probabilistic intelligence must operate inside deterministic governance boundaries.
 
-This server lets AI clients discover the stack, read canonical resources, choose the correct project entry point, and generate first-pass governance guidance without storing user answers.
+This server lets AI clients discover the stack, read canonical resources, choose the correct project entry point, generate first-pass governance guidance, and perform explicit GitHub file writes through Worker secrets.
 
 ## Status
 
@@ -41,6 +41,8 @@ https://mcp.context-stack.org/health
 - `recommend_project`
 - `get_glossary_term`
 - `list_stack_resources`
+- `update_file`
+- `create_file`
 
 ### Prompts
 
@@ -52,7 +54,7 @@ https://mcp.context-stack.org/health
 
 ## Local Run
 
-Requires Node.js 20 or later.
+Requires Node.js 20 or later and Wrangler.
 
 ```bash
 npm test
@@ -99,11 +101,12 @@ curl -X POST https://mcp.context-stack.org/mcp \
 
 ## Design Choices
 
-- Read-only by default.
+- Read tools are source-routed through the canonical stack catalog.
+- Write tools require the `GITHUB_TOKEN` Worker secret.
 - No database.
 - No stored user prompts, assessment answers, or organization data.
 - Resources point to canonical GitHub project files.
-- Tools return guidance, not side effects.
+- GitHub write tools target owner `kannanokannan` and require explicit repo, path, content, and commit message arguments.
 - The server does not replace any stack repo. It routes agents to the correct source.
 - The server is for discovery and decision support, not policy enforcement.
 

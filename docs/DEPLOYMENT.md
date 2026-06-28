@@ -6,43 +6,56 @@ The intended public endpoint is:
 https://mcp.context-stack.org/mcp
 ```
 
-## DNS Plan
+## Cloudflare Workers
 
-Do not point `mcp.context-stack.org` to GitHub Pages.
-
-Use it only after a runtime host exists. The likely path is:
+The production runtime is Cloudflare Workers. Keep the public MCP endpoint unchanged:
 
 ```text
-mcp.context-stack.org -> runtime host -> /mcp
+https://mcp.context-stack.org/mcp
 ```
 
-Runtime host options:
+Health endpoint:
 
-- Cloudflare Worker
-- Render
-- Railway
-- Fly.io
-- Vercel serverless function
+```text
+https://mcp.context-stack.org/health
+```
 
 ## v0.1 Runtime Requirements
 
-- Node.js 20 or later
+- Cloudflare Workers runtime
 - HTTP POST support
 - Outbound HTTPS access to `raw.githubusercontent.com` for resource reads
+- Outbound HTTPS access to `api.github.com` for explicit write tools
 - No persistent storage required
 
-## Environment Variables
+## Worker Secrets
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `HOST` | `127.0.0.1` | Local bind host |
-| `PORT` | `8787` | Local bind port |
+| Secret | Purpose |
+|--------|---------|
+| `GITHUB_TOKEN` | GitHub PAT used by `update_file` and `create_file` |
 
-Hosted providers usually set `PORT`. In that case, set `HOST=0.0.0.0`.
+Set the secret with:
 
-## Suggested First Deploy
+```bash
+wrangler secret put GITHUB_TOKEN
+```
 
-For the first public version, use a simple Node host before optimizing for edge runtime. The server is stateless, so moving to Cloudflare Worker later is straightforward but should be tested separately.
+Do not commit the token or place it in `wrangler.toml`.
+
+## Deploy
+
+```bash
+npm test
+wrangler deploy
+```
+
+Live tool-list check:
+
+```bash
+curl -X POST https://mcp.context-stack.org/mcp \
+  -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
 
 ## Production Controls
 
@@ -53,4 +66,4 @@ Before public deployment:
 - Log only aggregate method counts unless a user explicitly opts in.
 - Add uptime monitoring for `/health`.
 - Confirm `resources/read` can fetch canonical raw GitHub files.
-- Add `mcp.context-stack.org` DNS only after the runtime URL is known.
+- Confirm write tools fail closed when `GITHUB_TOKEN` is missing.

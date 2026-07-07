@@ -43,6 +43,7 @@ https://mcp.context-stack.org/health
 - `list_stack_resources`
 - `update_file`
 - `create_file`
+- `delete_file`
 
 ### Prompts
 
@@ -116,7 +117,7 @@ curl -X POST https://mcp.context-stack.org/mcp \
 - No database.
 - No stored user prompts, assessment answers, or organization data.
 - Resources point to canonical GitHub project files.
-- GitHub write tools target owner `kannanokannan` and require explicit repo, path, content, and commit message arguments.
+- GitHub write tools target owner `kannanokannan` and require explicit repo, path, content or delete intent, and commit message arguments.
 - The server does not replace any stack repo. It routes agents to the correct source.
 - The server is for discovery and decision support, not policy enforcement.
 

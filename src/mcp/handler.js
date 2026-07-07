@@ -133,6 +133,30 @@ export const tools = [
         }
       }
     }
+  },
+  {
+    name: "delete_file",
+    title: "Delete GitHub File",
+    description: "Delete an existing file in a kannanokannan GitHub repo using the Worker GITHUB_TOKEN secret.",
+    inputSchema: {
+      type: "object",
+      required: ["repo", "path", "message"],
+      additionalProperties: false,
+      properties: {
+        repo: {
+          type: "string",
+          description: "Repository name under owner kannanokannan."
+        },
+        path: {
+          type: "string",
+          description: "File path inside the repository."
+        },
+        message: {
+          type: "string",
+          description: "Commit message for the file deletion."
+        }
+      }
+    }
   }
 ];
 
@@ -311,6 +335,9 @@ async function callTool(params, context = {}) {
     case "create_file":
       return textResult(await writeGitHubFile(args, context, { mode: "create" }));
 
+    case "delete_file":
+      return textResult(await writeGitHubFile(args, context, { mode: "delete" }));
+
     default:
       throw invalidParams(`Unknown tool: ${name}`);
   }
@@ -319,7 +346,7 @@ async function callTool(params, context = {}) {
 async function writeGitHubFile(args, context, options) {
   const repo = validateRepo(args.repo);
   const path = validatePath(args.path);
-  const content = validateString(args.content, "content");
+  const content = options.mode === "delete" ? "" : validateString(args.content, "content");
   const message = validateString(args.message, "message");
   const token = context?.env?.GITHUB_TOKEN;
 
@@ -339,14 +366,20 @@ async function writeGitHubFile(args, context, options) {
     throw invalidParams(`File does not exist: ${repo}/${path}`);
   }
 
-  const payload = {
-    message,
-    content: utf8ToBase64(content),
-    ...(options.mode === "update" ? { sha: current.sha } : {})
-  };
+  if (options.mode === "delete" && !current.exists) {
+    throw invalidParams(`File does not exist: ${repo}/${path}`);
+  }
+
+  const payload = options.mode === "delete"
+    ? { message, sha: current.sha }
+    : {
+        message,
+        content: utf8ToBase64(content),
+        ...(options.mode === "update" ? { sha: current.sha } : {})
+      };
 
   const response = await fetch(fileUrl, {
-    method: "PUT",
+    method: options.mode === "delete" ? "DELETE" : "PUT",
     headers: githubHeaders(token),
     body: JSON.stringify(payload)
   });
@@ -358,6 +391,10 @@ async function writeGitHubFile(args, context, options) {
 
   const commitSha = data.commit?.sha ?? "unknown";
   const commitUrl = data.commit?.html_url ?? `https://github.com/${owner}/${repo}/commit/${commitSha}`;
+  if (options.mode === "delete") {
+    return `Deleted ${owner}/${repo}/${path}\nCommit: ${commitSha}\nCommit URL: ${commitUrl}`;
+  }
+
   const htmlUrl = data.content?.html_url ?? `https://github.com/${owner}/${repo}/blob/main/${path}`;
   return `${options.mode === "create" ? "Created" : "Updated"} ${owner}/${repo}/${path}\nCommit: ${commitSha}\nCommit URL: ${commitUrl}\nFile URL: ${htmlUrl}`;
 }

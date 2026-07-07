@@ -46,6 +46,7 @@ const tools = await handleJsonRpc({
 assert.ok(tools.result.tools.some((tool) => tool.name === "recommend_project"));
 assert.ok(tools.result.tools.some((tool) => tool.name === "update_file"));
 assert.ok(tools.result.tools.some((tool) => tool.name === "create_file"));
+assert.ok(tools.result.tools.some((tool) => tool.name === "delete_file"));
 assert.equal(tools.result.cacheScope, "public");
 
 const recommendation = await handleJsonRpc({

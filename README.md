@@ -67,7 +67,17 @@ Health check:
 curl http://127.0.0.1:8787/health
 ```
 
-MCP initialize call:
+MCP 2026-07-28 discovery call:
+
+```bash
+curl -X POST http://127.0.0.1:8787/mcp \
+  -H "content-type: application/json" \
+  -H "MCP-Protocol-Version: 2026-07-28" \
+  -H "Mcp-Method: server/discover" \
+  -d '{"jsonrpc":"2.0","id":"discover-1","method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"curl","version":"1.0.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'
+```
+
+Legacy MCP initialize call remains supported during client cutover:
 
 ```bash
 curl -X POST http://127.0.0.1:8787/mcp \

@@ -1,6 +1,9 @@
 import { SERVER, findProject, findResource, glossary, projects, resources, stackOverview } from "../stack-catalog.js";
 
 const JSON_RPC = "2.0";
+const PROTOCOL_VERSION_META = "io.modelcontextprotocol/protocolVersion";
+const CACHE_PUBLIC = { ttlMs: 3_600_000, cacheScope: "public" };
+const SUPPORTED_PROTOCOL_VERSIONS = [SERVER.protocolVersion, SERVER.legacyProtocolVersion];
 
 export const tools = [
   {
@@ -198,6 +201,8 @@ async function handleSingle(request, context) {
   const isNotification = id === undefined;
 
   try {
+    validateHttpRouting(request, context);
+    validateProtocolVersion(request, context);
     const result = await routeMethod(request.method, request.params ?? {}, context);
     if (isNotification) return null;
     return { jsonrpc: JSON_RPC, id, result };
@@ -209,9 +214,12 @@ async function handleSingle(request, context) {
 
 async function routeMethod(method, params, context) {
   switch (method) {
+    case "server/discover":
+      return discoverResult();
+
     case "initialize":
       return {
-        protocolVersion: params.protocolVersion ?? SERVER.protocolVersion,
+        protocolVersion: supportedProtocolVersion(params.protocolVersion) ? params.protocolVersion : SERVER.legacyProtocolVersion,
         capabilities: {
           resources: {},
           prompts: {},
@@ -231,7 +239,7 @@ async function routeMethod(method, params, context) {
       return {};
 
     case "resources/list":
-      return {
+      return completeResult({
         resources: resources.map((resource) => ({
           uri: resource.uri,
           name: resource.name,
@@ -239,19 +247,19 @@ async function routeMethod(method, params, context) {
           description: resource.description,
           mimeType: resource.mimeType
         }))
-      };
+      });
 
     case "resources/read":
       return readResource(params);
 
     case "tools/list":
-      return { tools };
+      return completeResult({ tools });
 
     case "tools/call":
       return callTool(params, context);
 
     case "prompts/list":
-      return { prompts };
+      return completeResult({ prompts });
 
     case "prompts/get":
       return getPrompt(params);
@@ -266,7 +274,7 @@ async function readResource(params) {
   if (!resource) throw invalidParams(`Unknown resource URI: ${params.uri}`);
 
   const text = resource.text ?? await fetchText(resource.sourceUrl);
-  return {
+  return completeResult({
     contents: [
       {
         uri: resource.uri,
@@ -274,7 +282,7 @@ async function readResource(params) {
         text
       }
     ]
-  };
+  });
 }
 
 async function callTool(params, context = {}) {
@@ -533,14 +541,92 @@ async function fetchText(url) {
 
 function textResult(text) {
   return {
+    resultType: "complete",
     content: [
       {
         type: "text",
         text
       }
     ],
-    isError: false
+    isError: false,
+    ...CACHE_PUBLIC
   };
+}
+
+function discoverResult() {
+  return completeResult({
+    supportedVersions: SUPPORTED_PROTOCOL_VERSIONS,
+    capabilities: {
+      resources: {},
+      prompts: {},
+      tools: {}
+    },
+    serverInfo: {
+      name: SERVER.name,
+      version: SERVER.version
+    },
+    instructions: "Use this read-only server to discover the Context Stack, choose the right project, and retrieve canonical governance resources. Do not send confidential assessment answers unless the user explicitly asks to include them."
+  });
+}
+
+function completeResult(result) {
+  return {
+    resultType: "complete",
+    ...result,
+    ...CACHE_PUBLIC
+  };
+}
+
+function validateProtocolVersion(request, context) {
+  const requested = requestedProtocolVersion(request, context);
+  if (!requested || supportedProtocolVersion(requested)) return;
+  throw unsupportedProtocolVersion(requested);
+}
+
+function requestedProtocolVersion(request, context) {
+  if (request.method === "initialize") return request.params?.protocolVersion;
+  return request.params?._meta?.[PROTOCOL_VERSION_META] ?? context?.http?.protocolVersion;
+}
+
+function supportedProtocolVersion(version) {
+  return !version || SUPPORTED_PROTOCOL_VERSIONS.includes(version);
+}
+
+function validateHttpRouting(request, context) {
+  const http = context?.http ?? {};
+  if (http.method && http.method !== request.method) {
+    throw invalidRequest(`Mcp-Method header (${http.method}) does not match JSON-RPC method (${request.method}).`);
+  }
+
+  if (!http.name) return;
+  const expectedName = rpcName(request);
+  if (expectedName && http.name !== expectedName) {
+    throw invalidRequest(`Mcp-Name header (${http.name}) does not match JSON-RPC target (${expectedName}).`);
+  }
+}
+
+function rpcName(request) {
+  const params = request.params ?? {};
+  if (request.method === "tools/call") return params.name;
+  if (request.method === "prompts/get") return params.name;
+  if (request.method === "resources/read") return params.uri;
+  return undefined;
+}
+
+function unsupportedProtocolVersion(requested) {
+  const error = new Error("Unsupported protocol version");
+  error.code = -32022;
+  error.data = {
+    supported: SUPPORTED_PROTOCOL_VERSIONS,
+    requested
+  };
+  return error;
+}
+
+function invalidRequest(message) {
+  const error = new Error(message);
+  error.code = -32600;
+  return error;
 }
 
 function rpcError(id, code, message, data) {

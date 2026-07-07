@@ -62,7 +62,7 @@ const server = http.createServer(async (req, res) => {
     const body = await readBody(req);
     const payload = body.trim() ? JSON.parse(body) : null;
     requestSummary = summarizeRpcPayload(payload);
-    const response = await handleJsonRpc(payload);
+    const response = await handleJsonRpc(payload, { http: httpMetadata(req.headers) });
     requestSummary = `${requestSummary} outcome=${summarizeRpcResponse(response)}`;
 
     if (response === null) {
@@ -185,6 +185,18 @@ function safeLogValue(value) {
 function setCors(res) {
   res.setHeader("access-control-allow-origin", "*");
   res.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
-  res.setHeader("access-control-allow-headers", "content-type, mcp-session-id, mcp-protocol-version");
-  res.setHeader("access-control-expose-headers", "mcp-session-id");
+  res.setHeader("access-control-allow-headers", "authorization, content-type, mcp-method, mcp-name, mcp-protocol-version, mcp-session-id");
+  res.setHeader("access-control-expose-headers", "mcp-protocol-version");
+}
+
+function httpMetadata(headers) {
+  return {
+    protocolVersion: headerValue(headers, "mcp-protocol-version"),
+    method: headerValue(headers, "mcp-method"),
+    name: headerValue(headers, "mcp-name")
+  };
+}
+
+function headerValue(headers, name) {
+  return headers[name] ?? headers[name.toLowerCase()];
 }

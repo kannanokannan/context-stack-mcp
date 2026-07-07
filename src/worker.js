@@ -47,7 +47,7 @@ export default {
       const body = await readBody(request);
       const payload = body.trim() ? JSON.parse(body) : null;
       requestSummary = summarizeRpcPayload(payload);
-      const response = await handleJsonRpc(payload, { env });
+      const response = await handleJsonRpc(payload, { env, http: httpMetadata(request.headers) });
       requestSummary = `${requestSummary} outcome=${summarizeRpcResponse(response)}`;
 
       if (response === null) {
@@ -94,13 +94,21 @@ function withCors(response) {
   const headers = new Headers(response.headers);
   headers.set("access-control-allow-origin", "*");
   headers.set("access-control-allow-methods", "GET,POST,OPTIONS");
-  headers.set("access-control-allow-headers", "content-type, mcp-session-id, mcp-protocol-version");
-  headers.set("access-control-expose-headers", "mcp-session-id");
+  headers.set("access-control-allow-headers", "authorization, content-type, mcp-method, mcp-name, mcp-protocol-version, mcp-session-id");
+  headers.set("access-control-expose-headers", "mcp-protocol-version");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers
   });
+}
+
+function httpMetadata(headers) {
+  return {
+    protocolVersion: headers.get("mcp-protocol-version") ?? undefined,
+    method: headers.get("mcp-method") ?? undefined,
+    name: headers.get("mcp-name") ?? undefined
+  };
 }
 
 function logRequest(request, url, durationMs, summary) {

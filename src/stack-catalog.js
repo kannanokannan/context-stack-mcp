@@ -1,7 +1,8 @@
 export const SERVER = {
   name: "context-stack-mcp",
   version: "0.1.0",
-  protocolVersion: "2025-06-18",
+  protocolVersion: "2026-07-28",
+  legacyProtocolVersion: "2025-06-18",
   endpoint: "https://mcp.context-stack.org/mcp",
   doctrine: "Probabilistic intelligence must operate inside deterministic governance boundaries."
 };

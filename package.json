@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Cloudflare Worker MCP endpoint for the Context Stack with canonical read tools and GitHub file write tools.",
+  "description": "Read-only Cloudflare Worker MCP endpoint for canonical Context Stack resources and guidance.",
   "license": "Apache-2.0",
   "scripts": {
     "start": "node src/server.js",

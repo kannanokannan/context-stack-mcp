@@ -44,10 +44,27 @@ const tools = await handleJsonRpc({
   }
 });
 assert.ok(tools.result.tools.some((tool) => tool.name === "recommend_project"));
-assert.ok(tools.result.tools.some((tool) => tool.name === "update_file"));
-assert.ok(tools.result.tools.some((tool) => tool.name === "create_file"));
-assert.ok(tools.result.tools.some((tool) => tool.name === "delete_file"));
+assert.ok(!tools.result.tools.some((tool) => tool.name === "update_file"));
+assert.ok(!tools.result.tools.some((tool) => tool.name === "create_file"));
+assert.ok(!tools.result.tools.some((tool) => tool.name === "delete_file"));
 assert.equal(tools.result.cacheScope, "public");
+
+const disabledWrite = await handleJsonRpc({
+  jsonrpc: "2.0",
+  id: "disabled-write",
+  method: "tools/call",
+  params: {
+    name: "update_file",
+    arguments: {
+      repo: "context-stack",
+      path: "_nonexistent_security_probe.txt",
+      content: "probe",
+      message: "probe"
+    }
+  }
+});
+assert.equal(disabledWrite.error.code, -32602);
+assert.match(disabledWrite.error.message, /Tool disabled: update_file .*read-only/);
 
 const recommendation = await handleJsonRpc({
   jsonrpc: "2.0",

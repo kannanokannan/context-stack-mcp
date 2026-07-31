@@ -1,32 +1,17 @@
-# Security
+# Security Policy
 
-## Supported Version
+## Reporting
 
-| Version | Supported |
-|---------|-----------|
-| 0.1.x | Yes |
+Use GitHub's private vulnerability reporting: open this repository's Security tab and select **Report a vulnerability**. Do not open a public issue for a security vulnerability.
 
-## Reporting Issues
+## What to expect
 
-Open a GitHub issue with a concise description and reproduction steps. Do not include secrets, regulated data, or private organization data in public issues.
+Reports are reviewed on a best-effort basis. This open-source project is maintained by an individual. No deadline or financial reward is promised.
 
-## Security Posture
+## Supported versions
 
-- Read-only MCP surface.
-- No side-effect tools.
-- No secret handling.
-- No credential proxying.
-- No database.
-- No default request-body logging.
+The current `main` branch is supported. Security fixes are not backported to older tags.
 
-## Production Hardening Checklist
+## Scope
 
-Before public deployment:
-
-- Add edge rate limiting.
-- Restrict maximum request body size.
-- Keep dependency set small.
-- Pin runtime version.
-- Monitor failed JSON-RPC calls.
-- Review CORS policy for the selected host.
-- Validate DNS and HTTPS before publishing the endpoint in stack repos.
+Code in this repository is in scope. Report vulnerabilities in third-party dependencies to the relevant upstream project.

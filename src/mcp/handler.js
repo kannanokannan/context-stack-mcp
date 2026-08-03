@@ -407,9 +407,11 @@ function discoverResult() {
       prompts: {},
       tools: {}
     },
-    serverInfo: {
-      name: SERVER.name,
-      version: SERVER.version
+    _meta: {
+      "io.modelcontextprotocol/serverInfo": {
+        name: SERVER.name,
+        version: SERVER.version
+      }
     },
     instructions: "Use this read-only server to discover the Context Stack, choose the right project, and retrieve canonical governance resources. Do not send confidential assessment answers unless the user explicitly asks to include them."
   });
@@ -430,8 +432,20 @@ function validateProtocolVersion(request, context) {
 }
 
 function requestedProtocolVersion(request, context) {
-  if (request.method === "initialize") return request.params?.protocolVersion;
-  return request.params?._meta?.[PROTOCOL_VERSION_META] ?? context?.http?.protocolVersion;
+  const bodyVersion = request.method === "initialize"
+    ? request.params?.protocolVersion
+    : request.params?._meta?.[PROTOCOL_VERSION_META];
+  const headerVersion = context?.http?.protocolVersion;
+
+  if (bodyVersion && headerVersion && bodyVersion !== headerVersion) {
+    throw headerMismatch(bodyVersion, headerVersion);
+  }
+
+  return bodyVersion ?? headerVersion;
+}
+
+export function httpStatusForResponse(response) {
+  return response?.error?.code === -32020 || response?.error?.code === -32022 ? 400 : 200;
 }
 
 function supportedProtocolVersion(version) {
@@ -466,6 +480,12 @@ function unsupportedProtocolVersion(requested) {
     supported: SUPPORTED_PROTOCOL_VERSIONS,
     requested
   };
+  return error;
+}
+
+function headerMismatch(bodyVersion, headerVersion) {
+  const error = new Error(`Header mismatch: MCP-Protocol-Version header value '${headerVersion}' does not match body value '${bodyVersion}'`);
+  error.code = -32020;
   return error;
 }
 

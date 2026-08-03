@@ -1,5 +1,5 @@
 import { SERVER } from "./stack-catalog.js";
-import { handleJsonRpc } from "./mcp/handler.js";
+import { handleJsonRpc, httpStatusForResponse } from "./mcp/handler.js";
 
 export default {
   async fetch(request, env) {
@@ -54,7 +54,7 @@ export default {
         return withCors(new Response(null, { status: 204 }));
       }
 
-      return jsonResponse(response);
+      return jsonResponse(response, { status: httpStatusForResponse(response) });
     } catch (error) {
       requestSummary ||= "rpc=parse-error";
       return jsonResponse({

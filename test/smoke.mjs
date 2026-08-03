@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { handleJsonRpc } from "../src/mcp/handler.js";
+import { handleJsonRpc, httpStatusForResponse } from "../src/mcp/handler.js";
+import worker from "../src/worker.js";
 
 const modernMeta = {
   "io.modelcontextprotocol/protocolVersion": "2026-07-28",
@@ -18,7 +19,8 @@ const discovered = await handleJsonRpc({
     method: "server/discover"
   }
 });
-assert.equal(discovered.result.serverInfo.name, "context-stack-mcp");
+assert.equal(discovered.result._meta["io.modelcontextprotocol/serverInfo"].name, "context-stack-mcp");
+assert.equal(discovered.result.serverInfo, undefined);
 assert.ok(discovered.result.supportedVersions.includes("2026-07-28"));
 assert.ok(discovered.result.capabilities.tools);
 assert.ok(discovered.result.capabilities.resources);
@@ -48,6 +50,50 @@ assert.ok(!tools.result.tools.some((tool) => tool.name === "update_file"));
 assert.ok(!tools.result.tools.some((tool) => tool.name === "create_file"));
 assert.ok(!tools.result.tools.some((tool) => tool.name === "delete_file"));
 assert.equal(tools.result.cacheScope, "public");
+assert.equal(httpStatusForResponse(tools), 200);
+
+const headerOnly = await handleJsonRpc({
+  jsonrpc: "2.0",
+  id: "header-only",
+  method: "tools/list",
+  params: {}
+}, {
+  http: {
+    protocolVersion: "2026-07-28",
+    method: "tools/list"
+  }
+});
+assert.ok(headerOnly.result.tools.some((tool) => tool.name === "recommend_project"));
+
+const mismatch = await handleJsonRpc({
+  jsonrpc: "2.0",
+  id: "mismatch",
+  method: "tools/list",
+  params: { _meta: modernMeta }
+}, {
+  http: {
+    protocolVersion: "2025-06-18",
+    method: "tools/list"
+  }
+});
+assert.equal(mismatch.error.code, -32020);
+assert.match(mismatch.error.message, /Header mismatch/);
+assert.equal(httpStatusForResponse(mismatch), 400);
+const mismatchHttp = await worker.fetch(new Request("http://localhost/mcp", {
+  method: "POST",
+  headers: {
+    "content-type": "application/json",
+    "mcp-protocol-version": "2025-06-18",
+    "mcp-method": "tools/list"
+  },
+  body: JSON.stringify({
+    jsonrpc: "2.0",
+    id: "mismatch-http",
+    method: "tools/list",
+    params: { _meta: modernMeta }
+  })
+}));
+assert.equal(mismatchHttp.status, 400);
 
 const disabledWrite = await handleJsonRpc({
   jsonrpc: "2.0",
@@ -114,5 +160,7 @@ const unsupported = await handleJsonRpc({
   }
 });
 assert.equal(unsupported.error.code, -32022);
+assert.deepEqual(unsupported.error.data.supported, ["2026-07-28", "2025-06-18"]);
+assert.equal(httpStatusForResponse(unsupported), 400);
 
 console.log("Smoke test passed");

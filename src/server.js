@@ -1,6 +1,6 @@
 import http from "node:http";
 import { SERVER } from "./stack-catalog.js";
-import { handleJsonRpc } from "./mcp/handler.js";
+import { handleJsonRpc, httpStatusForResponse } from "./mcp/handler.js";
 
 const port = Number(process.env.PORT ?? 8787);
 const host = process.env.HOST ?? "127.0.0.1";
@@ -71,7 +71,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    sendJson(res, 200, response);
+    sendJson(res, httpStatusForResponse(response), response);
   } catch (error) {
     requestSummary ||= "rpc=parse-error";
     sendJson(res, 400, {

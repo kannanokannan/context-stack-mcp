@@ -75,6 +75,10 @@ curl -X POST http://127.0.0.1:8787/mcp \
   -d '{"jsonrpc":"2.0","id":"discover-1","method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"curl","version":"1.0.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'
 ```
 
+### Versioning note
+
+For interoperability, this server accepts a Streamable HTTP request carrying only the `MCP-Protocol-Version` header, without a protocol-version declaration in body `_meta`. MCP 2026-07-28 expects both values, with the header mirroring the body value. This is a deliberate interoperability allowance. When both are present and differ, the server rejects the request with `HeaderMismatch` (`-32020`) and HTTP 400.
+
 Legacy MCP initialize call remains supported during client cutover:
 
 ```bash

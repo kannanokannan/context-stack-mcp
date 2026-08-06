@@ -1,18 +1,15 @@
 import http from "node:http";
 import { SERVER } from "./stack-catalog.js";
 import { handleJsonRpc, httpStatusForResponse } from "./mcp/handler.js";
+import { handleAdvisorRequest } from "./advisor.js";
+import { createInMemoryBudget } from "./advisor-budget.js";
 
 const port = Number(process.env.PORT ?? 8787);
 const host = process.env.HOST ?? "127.0.0.1";
+const localBudget = createInMemoryBudget();
 
 const server = http.createServer(async (req, res) => {
   setCors(res);
-
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
 
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? `${host}:${port}`}`);
   const requestStart = Date.now();
@@ -21,6 +18,27 @@ const server = http.createServer(async (req, res) => {
   res.on("finish", () => {
     logRequest(req, url, res.statusCode, Date.now() - requestStart, requestSummary);
   });
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/advisor") {
+    requestSummary = "route=advisor";
+    const advisorResponse = await handleAdvisorRequest(toRequest(req, url), {
+      ADVISOR_MODEL_ID: process.env.ADVISOR_MODEL_ID,
+      ADVISOR_APP_REVISION: process.env.ADVISOR_APP_REVISION,
+      ADVISOR_WORKER_VERSION_ID: process.env.ADVISOR_WORKER_VERSION_ID
+    }, {
+      budget: localBudget,
+      ai: globalThis.__CONTEXT_STACK_ADVISOR_AI,
+      ip: headerValue(req.headers, "cf-connecting-ip") ?? "127.0.0.1"
+    });
+    sendResponse(res, advisorResponse);
+    return;
+  }
 
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
     requestSummary = "route=health";
@@ -111,6 +129,21 @@ function sendJson(res, status, body) {
     "cache-control": "no-store"
   });
   res.end(data);
+}
+
+function sendResponse(res, response) {
+  response.headers.forEach((value, key) => res.setHeader(key, value));
+  res.writeHead(response.status);
+  response.arrayBuffer().then((body) => res.end(Buffer.from(body)));
+}
+
+function toRequest(req, url) {
+  return new Request(url, {
+    method: req.method,
+    headers: req.headers,
+    body: req,
+    duplex: "half"
+  });
 }
 
 function logRequest(req, url, status, durationMs, summary) {

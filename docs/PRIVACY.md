@@ -9,6 +9,7 @@ This MCP server is designed to expose public Context Stack resources and safe gu
 - No stored prompts.
 - No stored assessment answers.
 - No organization-specific profile building.
+- The `/advisor` endpoint stores only numeric budget and rate-limit counters in its Durable Object; it does not store question text.
 
 ## What May Be Logged
 
@@ -23,6 +24,7 @@ A production deployment may collect aggregate operational metrics:
 - server version
 
 The server must not log full request bodies by default.
+The advisor Worker has `observability.enabled = false` and logs only the route summary; it must not log question text or model output.
 
 Examples:
 
@@ -39,3 +41,7 @@ Users should not send confidential business data, regulated data, secrets, acces
 ## Future Consent Model
 
 If later versions support adoption capture or assessment sharing, that must be explicit and opt-in. The default flow remains local and non-persistent.
+
+## Explanation Advisor Terms
+
+The optional advisor sends a visitor's question to Cloudflare Workers AI for processing. The question is not stored, not logged, and not used to train any model. Responses are model-generated guidance based only on public Context Stack documents; they are not enforcement decisions or compliance opinions. The model identifier and source identifiers are returned with each successful response.

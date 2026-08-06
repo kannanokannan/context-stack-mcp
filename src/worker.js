@@ -1,5 +1,7 @@
 import { SERVER } from "./stack-catalog.js";
 import { handleJsonRpc, httpStatusForResponse } from "./mcp/handler.js";
+import { handleAdvisorRequest } from "./advisor.js";
+import { AdvisorBudget } from "./advisor-budget.js";
 
 export default {
   async fetch(request, env) {
@@ -10,6 +12,13 @@ export default {
     try {
       if (request.method === "OPTIONS") {
         return withCors(new Response(null, { status: 204 }));
+      }
+
+      if (request.method === "POST" && url.pathname === "/advisor") {
+        requestSummary = "route=advisor";
+        return withCors(await handleAdvisorRequest(request, env, {
+          ip: request.headers.get("cf-connecting-ip") ?? "anonymous"
+        }));
       }
 
       if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
@@ -178,3 +187,5 @@ function safeLogValue(value) {
     .replace(/[^a-zA-Z0-9_:/.-]/g, "_")
     .slice(0, 160);
 }
+
+export { AdvisorBudget };

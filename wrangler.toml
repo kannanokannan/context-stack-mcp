@@ -4,5 +4,29 @@ compatibility_date = "2026-06-28"
 
 routes = [
   { pattern = "mcp.context-stack.org/mcp*", zone_name = "context-stack.org" },
-  { pattern = "mcp.context-stack.org/health", zone_name = "context-stack.org" }
+  { pattern = "mcp.context-stack.org/health", zone_name = "context-stack.org" },
+  { pattern = "mcp.context-stack.org/advisor", zone_name = "context-stack.org" }
 ]
+
+[ai]
+binding = "AI"
+remote = true
+
+[observability]
+enabled = false
+
+[vars]
+ADVISOR_MODEL_ID = "@cf/meta/llama-3.1-8b-instruct-fast"
+ADVISOR_APP_REVISION = "local"
+ADVISOR_WORKER_VERSION_ID = "local"
+ADVISOR_DAILY_NEURONS = "10000"
+ADVISOR_PER_IP_REQUESTS = "20"
+ADVISOR_GLOBAL_REQUESTS = "100"
+
+[[durable_objects.bindings]]
+name = "ADVISOR_BUDGET"
+class_name = "AdvisorBudget"
+
+[[migrations]]
+tag = "advisor-budget-v1"
+new_sqlite_classes = ["AdvisorBudget"]

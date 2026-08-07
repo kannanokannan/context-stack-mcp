@@ -183,12 +183,26 @@ const CLAIM_CEILING_PATTERNS = Object.freeze([
   /\b(?:provide|provides|providing)(?:\s+\w+){0,3}\s+compliant\b/i,
   /\b(?:is|are|makes|make|renders|render)(?:\s+\w+){0,4}\s+(?:fully\s+)?(?:compliant|certified|conformant|accredited)\b/i,
   /\b(?:AARM|CSA|Cloud\s+Security\s+Alliance|EU\s+AI\s+Act|standard|standards?)\s*[- ](?:certified|approved|conformant)\b/i,
-  /\b(?:certified|accredited|conformant|approved)\s+(?:to|by)\b/i,
+  /\b(?:certified|accredited|conformant)\s+(?:to|by)\b/i,
+  /\bapproved\s+by\s+(?:\w+\s+){0,2}(?:AARM|CSA|certification\s+body|standards?\s+body|auditor|assessor|regulator)\b/i,
   /\b(?:this|that|it|we|the\s+framework|the\s+advisor|the\s+response|the\s+guidance|guidance)\s+(?:is|provides?|offers?|gives?)\s+(?:a\s+)?(?:legal|regulatory)\s+(?:advice|opinion)\b/i
 ]);
 
+const NEGATORS = /\b(?:not|never|cannot|can't|doesn't|does not|don't|do not|isn't|is not|aren't|are not|no|without|rather than|instead of)\b/i;
+const CLAUSE = /[.;:,]|\b(?:but|however|although|though|while)\b/i;
+
 function hasClaimCeilingViolation(text) {
-  return CLAIM_CEILING_PATTERNS.some((pattern) => pattern.test(text));
+  for (const pattern of CLAIM_CEILING_PATTERNS) {
+    const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
+    const matcher = new RegExp(pattern.source, flags);
+    let match;
+    while ((match = matcher.exec(text)) !== null) {
+      const before = text.slice(0, match.index);
+      const parts = before.split(CLAUSE);
+      if (!NEGATORS.test(parts[parts.length - 1])) return true;
+    }
+  }
+  return false;
 }
 
 function validateModelOutput(value, route, documents) {

@@ -223,6 +223,76 @@ for (const claimCase of [
     name: "EU AI Act compliance claim",
     explanation: "This makes your organization compliant with the EU AI Act.",
     expected: false
+  },
+  {
+    name: "negated compliance statement",
+    explanation: "This does not mean your system is compliant with any regulation.",
+    expected: true
+  },
+  {
+    name: "negated organization compliance statement",
+    explanation: "Following this route is not sufficient to make your organization compliant.",
+    expected: true
+  },
+  {
+    name: "negated AARM certification statement",
+    explanation: "The gateway is not AARM-certified.",
+    expected: true
+  },
+  {
+    name: "negated compliance guarantee",
+    explanation: "We cannot guarantee compliance with any framework.",
+    expected: true
+  },
+  {
+    name: "human approval workflow",
+    explanation: "Actions must still be approved by a human reviewer before execution.",
+    expected: true
+  },
+  {
+    name: "policy owner approval workflow",
+    explanation: "Egress requests follow an approval path approved by the policy owner.",
+    expected: true
+  },
+  {
+    name: "CSA approval claim",
+    explanation: "The profile is approved by the CSA.",
+    expected: false
+  },
+  {
+    name: "auditor approval claim",
+    explanation: "The gateway is approved by an independent auditor.",
+    expected: false
+  },
+  {
+    name: "compliance structure evidence",
+    explanation: "The framework helps structure evidence for compliance audits.",
+    expected: true
+  },
+  {
+    name: "audit evidence",
+    explanation: "It produces defensible audit evidence across the delivery chain.",
+    expected: true
+  },
+  {
+    name: "negated legal and regulatory opinion",
+    explanation: "This is not legal advice and does not constitute a regulatory opinion.",
+    expected: true
+  },
+  {
+    name: "ISO certification claim",
+    explanation: "The gateway is certified to ISO 27001.",
+    expected: false
+  },
+  {
+    name: "EU AI Act assurance claim",
+    explanation: "Adopting this ensures compliance with the EU AI Act.",
+    expected: false
+  },
+  {
+    name: "legal filing advice claim",
+    explanation: "This is legal advice for your regulatory filing.",
+    expected: false
   }
 ]) {
   const deps = makeDeps(() => modelOutput({ explanation: claimCase.explanation }));
@@ -259,4 +329,4 @@ for (const claimCase of [
   assert.equal(body.error.code, "advisor_misconfigured");
 }
 
-console.log("Advisor tests passed (18 scenarios)");
+console.log("Advisor tests passed (32 scenarios)");

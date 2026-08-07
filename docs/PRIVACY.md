@@ -10,6 +10,7 @@ This MCP server is designed to expose public Context Stack resources and safe gu
 - No stored assessment answers.
 - No organization-specific profile building.
 - The `/advisor` endpoint stores only numeric budget and rate-limit counters in its Durable Object; it does not store question text.
+- The raw `CF-Connecting-IP` value is never written to Durable Object storage. The Worker derives a daily HMAC-SHA-256 pseudonym, truncated to 16 hexadecimal characters, from `${day}:${ip}` before using it for the per-IP counter.
 
 ## What May Be Logged
 

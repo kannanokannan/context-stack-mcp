@@ -35,14 +35,16 @@ https://mcp.context-stack.org/health
 | Secret | Purpose |
 |--------|---------|
 | `GITHUB_TOKEN` | GitHub PAT used by `update_file` and `create_file` |
+| `ADVISOR_IP_SALT` | HMAC key used to derive daily per-IP advisor budget pseudonyms |
 
 Set the secret with:
 
 ```bash
 wrangler secret put GITHUB_TOKEN
+wrangler secret put ADVISOR_IP_SALT
 ```
 
-Do not commit the token or place it in `wrangler.toml`.
+Set both secrets before deployment. Do not commit either secret or place either value in `wrangler.toml`, `.dev.vars`, or any other tracked file.
 
 ## Deploy
 

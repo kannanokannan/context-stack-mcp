@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { ADVISOR_MODEL_ID, handleAdvisorRequest, advisorRoute } from "../src/advisor.js";
 import { AdvisorBudget, createInMemoryBudget } from "../src/advisor-budget.js";
+import worker from "../src/worker.js";
 
 const route = advisorRoute("egress");
 const question = "Our AI agent is calling a vendor API with customer data. Where should we start?";
@@ -9,16 +10,23 @@ function documentsResponse(url) {
   return new Response(`Public framework source for ${url}. It contains governance guidance only.`);
 }
 
-function validModelOutput() {
+function modelOutput({
+  explanation = "Start with the ContextBoundary framework and classify the vendor API data flow before deciding what may cross the boundary.",
+  caveats = ["This is guidance, not an enforcement decision."]
+} = {}) {
   return {
     response: JSON.stringify({
       route: { primary: route.primary, support: route.support },
-      explanation: "Start with the ContextBoundary framework and classify the vendor API data flow before deciding what may cross the boundary.",
-      caveats: ["This is guidance, not an enforcement decision."],
+      explanation,
+      caveats,
       source_ids: route.documents,
       disclaimer: "Guidance, not enforcement; not a compliance or legal opinion."
     })
   };
+}
+
+function validModelOutput() {
+  return modelOutput();
 }
 
 function makeDeps(output = validModelOutput(), limits = { dailyNeurons: 1_000, perIpRequests: 10, globalRequests: 100 }) {
@@ -64,7 +72,9 @@ async function call(input, options) {
   assert.deepEqual(body.route, route);
   assert.equal(deps.calls[0].model, ADVISOR_MODEL_ID);
   assert.match(deps.calls[0].options.messages[0].content, /explanation-only component/);
+  assert.match(deps.calls[0].options.messages[0].content, /Caveats must state limitations/);
   assert.match(deps.calls[0].options.messages[1].content, /<untrusted_question>/);
+  assert.match(deps.calls[0].options.response_format.json_schema.properties.caveats.description, /Limitations, boundaries, or conditions/);
 }
 
 // 2. Invalid or non-schema output fails closed without model prose.
@@ -167,4 +177,86 @@ for (const injected of [
   });
 }
 
-console.log("Advisor tests passed (7)");
+// 8. Claim-ceiling validator rejects only status and compliance claims, not domain vocabulary.
+for (const claimCase of [
+  {
+    name: "ensuring compliance claim",
+    explanation: "This is essential for ensuring compliance with regulatory requirements and maintaining data sovereignty.",
+    expected: false
+  },
+  {
+    name: "technical-layer explanation",
+    explanation: "ContextBoundary operates at the technical layer, overlaying existing infrastructure, gateway, and identity stacks rather than replacing them.",
+    expected: true
+  },
+  {
+    name: "vendor-neutral specification",
+    explanation: "ContextBoundary is a vendor-neutral, open-source specification for enterprise AI data egress governance.",
+    expected: true
+  },
+  {
+    name: "approved egress boundaries",
+    explanation: "Use the framework to assign boundary zones and approved egress boundaries for the data flow.",
+    expected: true
+  },
+  {
+    name: "approval paths",
+    explanation: "Use the documented approval paths and approval workflows for the action.",
+    expected: true
+  },
+  {
+    name: "compliance evidence",
+    explanation: "The framework can organize compliance evidence, structure evidence for compliance, and audit evidence.",
+    expected: true
+  },
+  {
+    name: "AARM certification claim",
+    explanation: "The gateway is AARM-certified.",
+    expected: false
+  },
+  {
+    name: "AARM alignment claim",
+    explanation: "The gateway is AARM-aligned.",
+    expected: true
+  },
+  {
+    name: "EU AI Act compliance claim",
+    explanation: "This makes your organization compliant with the EU AI Act.",
+    expected: false
+  }
+]) {
+  const deps = makeDeps(() => modelOutput({ explanation: claimCase.explanation }));
+  const response = await call({ routeKey: "egress", question }, deps);
+  const body = await response.json();
+  assert.equal(body.ok, claimCase.expected, claimCase.name);
+  if (claimCase.expected) {
+    assert.equal(response.status, 200, claimCase.name);
+  } else {
+    assert.equal(body.error.code, "invalid_model_output", claimCase.name);
+    assert.equal(body.explanation, undefined, claimCase.name);
+  }
+}
+
+// 9. A complete response, including the verbatim disclaimer, remains valid.
+{
+  const deps = makeDeps(validModelOutput());
+  const response = await call({ routeKey: "egress", question }, deps);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.ok, true);
+  assert.equal(body.data_terms.purpose, "Guidance, not enforcement; not a compliance or legal opinion.");
+}
+
+// 10. The Worker fails closed when the required IP salt is absent.
+{
+  const response = await worker.fetch(new Request("http://localhost/advisor", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ routeKey: "egress", question })
+  }), {});
+  const body = await response.json();
+  assert.equal(response.status, 503);
+  assert.equal(body.error.code, "advisor_misconfigured");
+}
+
+console.log("Advisor tests passed (18 scenarios)");

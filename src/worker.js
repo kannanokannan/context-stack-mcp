@@ -16,8 +16,26 @@ export default {
 
       if (request.method === "POST" && url.pathname === "/advisor") {
         requestSummary = "route=advisor";
+        const salt = typeof env?.ADVISOR_IP_SALT === "string" ? env.ADVISOR_IP_SALT : "";
+        if (!salt) {
+          requestSummary = "route=advisor misconfigured";
+          return jsonResponse({
+            ok: false,
+            error: { code: "advisor_misconfigured", message: "Advisor IP salt is not configured." }
+          }, { status: 503 });
+        }
+        let hashedIp;
+        try {
+          hashedIp = await hashAdvisorIp(request.headers.get("cf-connecting-ip") ?? "anonymous", salt, dayKey());
+        } catch {
+          requestSummary = "route=advisor misconfigured";
+          return jsonResponse({
+            ok: false,
+            error: { code: "advisor_misconfigured", message: "Advisor IP salt is not usable." }
+          }, { status: 503 });
+        }
         return withCors(await handleAdvisorRequest(request, env, {
-          ip: request.headers.get("cf-connecting-ip") ?? "anonymous"
+          ip: hashedIp
         }));
       }
 
@@ -186,6 +204,22 @@ function safeLogValue(value) {
   return String(value)
     .replace(/[^a-zA-Z0-9_:/.-]/g, "_")
     .slice(0, 160);
+}
+
+function dayKey(now = Date.now()) {
+  return new Date(now).toISOString().slice(0, 10);
+}
+
+async function hashAdvisorIp(ip, salt, day) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(salt),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${day}:${ip}`));
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("").slice(0, 16);
 }
 
 export { AdvisorBudget };

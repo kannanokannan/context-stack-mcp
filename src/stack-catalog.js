@@ -56,7 +56,8 @@ export const projects = [
       { label: "RATIONALE.md", url: `${gh}/ContextBoundary/blob/main/RATIONALE.md` },
       { label: "tier-classification.md", url: `${gh}/ContextBoundary/blob/main/tier-classification.md` },
       { label: "gdpr.md", url: `${gh}/ContextBoundary/blob/main/gdpr.md` },
-      { label: "contextops-mapping.md", url: `${gh}/ContextBoundary/blob/main/contextops-mapping.md` }
+      { label: "contextops-mapping.md", url: `${gh}/ContextBoundary/blob/main/contextops-mapping.md` },
+      { label: "contextboundary-gw (reference gateway)", url: `${gh}/contextboundary-gw` }
     ]
   },
   {
@@ -144,6 +145,14 @@ export const resources = [
     description: "Sovereignty gap, CLOUD Act, regulatory timing, and design decisions.",
     mimeType: "text/markdown",
     sourceUrl: `${raw}/ContextBoundary/main/RATIONALE.md`
+  },
+  {
+    uri: "context-stack://contextboundary/gateway-conformance",
+    name: "contextboundary-gateway-conformance",
+    title: "ContextBoundary Gateway Conformance Report",
+    description: "Generated conformance report for the ContextBoundary reference gateway. Regenerated and diff-gated in CI, so it cannot drift from the code.",
+    mimeType: "text/markdown",
+    sourceUrl: `${raw}/contextboundary-gw/main/test/conformance/CONFORMANCE.md`
   },
   {
     uri: "context-stack://sthala/spec",

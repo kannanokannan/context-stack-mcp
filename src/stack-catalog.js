@@ -63,7 +63,7 @@ export const projects = [
   {
     id: "sthala",
     name: "Sthala",
-    layer: "governed runtime reference",
+    layer: "reference implementation - runtime placement",
     question: "Where does the AI actually run?",
     status: "v0.1 Alpha",
     repo: `${gh}/Sthala`,
@@ -78,7 +78,7 @@ export const projects = [
   {
     id: "griha",
     name: "Griha",
-    layer: "product/adoption layer",
+    layer: "reference implementation - worked example",
     question: "How does governed AI become a working product layer?",
     status: "proof of concept",
     repo: `${gh}/Griha`,
@@ -166,18 +166,18 @@ export const resources = [
     uri: "context-stack://griha/readme",
     name: "griha-readme",
     title: "Griha README",
-    description: "Product/adoption layer overview.",
+    description: "Reference implementation overview.",
     mimeType: "text/markdown",
     sourceUrl: `${raw}/Griha/main/README.md`
   }
 ];
 
 export const glossary = [
-  { term: "Context Stack", definition: "The sibling open-source projects together: ContextOps, ContextBoundary, Sthala, plus Griha as the product layer." },
+  { term: "Context Stack", definition: "The specification layer: ContextOps and ContextBoundary. contextboundary-gw, Sthala and Griha are reference implementations that apply it." },
   { term: "ContextOps", definition: "Organizational context governance for enterprise AI systems." },
   { term: "ContextBoundary", definition: "Deployment-agnostic egress governance for AI data flows." },
-  { term: "Sthala", definition: "A governed runtime reference where LLMs narrate and deterministic code computes." },
-  { term: "Griha", definition: "Product/adoption layer that inherits stack governance principles." },
+  { term: "Sthala", definition: "The Context Stack's reference implementation for runtime placement: LLMs narrate, deterministic code computes." },
+  { term: "Griha", definition: "A reference implementation: governed capabilities composed into a running system." },
   { term: "Egress Tier", definition: "Classification of where data is permitted to flow. Use Egress Tier, never Privacy Tier." },
   { term: "Spine", definition: "ContextOps lifecycle: Capture, Curate, Supply, Renew." },
   { term: "Triad", definition: "ContextOps pillars: People, Process, Context." },

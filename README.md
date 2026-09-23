@@ -6,6 +6,8 @@ Cloudflare Worker MCP endpoint for the Context Stack: ContextOps, ContextBoundar
 
 This read-only server lets AI clients discover the stack, read canonical resources, choose the correct project entry point, and generate first-pass governance guidance.
 
+The optional `/advisor` endpoint is an explanation layer over a route selected by the existing deterministic assessment. It uses Workers AI only to explain the selected public documents; it does not select or enforce a route.
+
 ## Status
 
 v0.1 is live at:
@@ -49,6 +51,10 @@ https://mcp.context-stack.org/health
 - `classify_contextboundary_egress`
 - `map_sthala_deployment`
 - `build_ai_governance_adoption_plan`
+
+### Explanation advisor
+
+Send a JSON POST to `/advisor` with a deterministic `routeKey` (`context`, `egress`, `runtime`, `delivery`, or `unsure`) and a question. Successful responses include the fixed route, model-generated explanation, selected public source identifiers, and model/application/Worker provenance. The endpoint returns no prose when the budget, rate limit, source retrieval, model call, or output validation fails.
 
 ## Local Run
 
@@ -114,12 +120,13 @@ curl -X POST https://mcp.context-stack.org/mcp \
 ## Design Choices
 
 - Read tools are source-routed through the canonical stack catalog.
-- No database.
+- No content database; the advisor budget Durable Object stores numeric counters only.
 - No stored user prompts, assessment answers, or organization data.
 - Resources point to canonical GitHub project files.
 - No GitHub token or other write credential is required.
 - The server does not replace any stack repo. It routes agents to the correct source.
 - The server is for discovery and decision support, not policy enforcement.
+- The advisor question is sent to Cloudflare Workers AI for processing; it is not stored, logged, or used to train a model.
 
 ## Privacy-Safe Logging
 
@@ -129,6 +136,7 @@ The server logs method-level operational metadata only:
 mcp method=POST path=/mcp status=200 duration_ms=8 rpc=tools/list outcome=ok
 mcp method=POST path=/mcp status=200 duration_ms=14 rpc=tools/call tool=recommend_project outcome=ok
 mcp method=POST path=/mcp status=200 duration_ms=42 rpc=resources/read resource=context-stack://glossary outcome=ok
+http method=POST path=/advisor status=200 duration_ms=80 route=advisor
 ```
 
 It does not log prompts, tool arguments, assessment answers, or organization-specific content.

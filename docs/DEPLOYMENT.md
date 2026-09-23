@@ -24,23 +24,27 @@ https://mcp.context-stack.org/health
 
 - Cloudflare Workers runtime
 - HTTP POST support
+- Workers AI binding using the configured advisor model
+- Durable Object binding for numeric advisor budget and rate-limit counters only
 - Outbound HTTPS access to `raw.githubusercontent.com` for resource reads
 - Outbound HTTPS access to `api.github.com` for explicit write tools
-- No persistent storage required
+- No content storage required; the advisor budget Durable Object stores numeric counters only
 
 ## Worker Secrets
 
 | Secret | Purpose |
 |--------|---------|
 | `GITHUB_TOKEN` | GitHub PAT used by `update_file` and `create_file` |
+| `ADVISOR_IP_SALT` | HMAC key used to derive daily per-IP advisor budget pseudonyms |
 
 Set the secret with:
 
 ```bash
 wrangler secret put GITHUB_TOKEN
+wrangler secret put ADVISOR_IP_SALT
 ```
 
-Do not commit the token or place it in `wrangler.toml`.
+Set both secrets before deployment. Do not commit either secret or place either value in `wrangler.toml`, `.dev.vars`, or any other tracked file.
 
 ## Deploy
 
@@ -62,7 +66,8 @@ curl -X POST https://mcp.context-stack.org/mcp \
 Before public deployment:
 
 - Add rate limiting at the edge.
-- Keep request-body logging disabled.
+- Keep request-body logging disabled and set `observability.enabled = false`.
+- Keep the advisor daily Neuron budget and per-IP/global request limits configured.
 - Log only aggregate method counts unless a user explicitly opts in.
 - Add uptime monitoring for `/health`.
 - Confirm `resources/read` can fetch canonical raw GitHub files.

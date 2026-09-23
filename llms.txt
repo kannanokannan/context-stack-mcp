@@ -1,6 +1,10 @@
 # context-stack-mcp
 
-> Read-only MCP endpoint for the Context Stack: ContextOps, ContextBoundary, Sthala, Griha, and canonical stack doctrine.
+> Read-only MCP endpoint for the Context Stack's canonical resources and doctrine.
+
+ContextOps and ContextBoundary are the specification layer. contextboundary-gw, Sthala and Griha are reference implementations that apply it.
+
+The composition is defined once, in COMPOSITION.md: https://github.com/kannanokannan/context-stack/blob/main/COMPOSITION.md
 
 context-stack-mcp exposes public resources, prompts, and safe guidance tools for AI clients. It does not store user prompts or assessment answers by default.
 
@@ -20,8 +24,8 @@ License: Apache 2.0. Status: v0.1 local implementation.
 - [context-stack](https://github.com/kannanokannan/context-stack): Canonical terminology, locked decisions, and family framing
 - [ContextOps](https://github.com/kannanokannan/ContextOps): AI context governance framework
 - [ContextBoundary](https://github.com/kannanokannan/ContextBoundary): Egress governance specification for AI data flows
-- [Sthala](https://github.com/kannanokannan/Sthala): Governed AI runtime placement reference
-- [Griha](https://github.com/kannanokannan/Griha): Product/adoption layer above the governance stack
+- [Sthala](https://github.com/kannanokannan/Sthala): Reference implementation for governed runtime placement
+- [Griha](https://github.com/kannanokannan/Griha): Reference implementation showing the stack principles composed into a working system
 
 ## Intended endpoint
 

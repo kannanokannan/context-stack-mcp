@@ -21,8 +21,8 @@ Probabilistic intelligence must operate inside deterministic governance boundari
 - Do not add vendor-specific assumptions.
 - Use "Egress Tier", never "Privacy Tier".
 - Keep ContextBoundary deployment-agnostic.
-- Keep Sthala as a governed runtime reference, not the scope of ContextBoundary.
-- Keep Griha as the product/adoption layer above the governance projects.
+- Do not describe the stack's shape. Where a surface needs it, use the canonical one-line form byte-identical, never a paraphrase: ContextOps and ContextBoundary are the specification layer. contextboundary-gw, Sthala and Griha are reference implementations that apply it.
+- The composition is defined once, in https://github.com/kannanokannan/context-stack/blob/main/COMPOSITION.md. `src/stack-catalog.js` is the only file in this repo permitted to state it (`context-stack/stack.yaml` -> `composition.canonical_surfaces`).
 - Prefer small, inspectable code over framework-heavy abstractions.
 
 ## Public Endpoint

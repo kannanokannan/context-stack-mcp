@@ -10,15 +10,22 @@ export const SERVER = {
 const gh = "https://github.com/kannanokannan";
 const raw = "https://raw.githubusercontent.com/kannanokannan";
 
+// The stack's shape, in the canonical words of context-stack/COMPOSITION.md.
+// This file is a canonical surface. Never re-type or reword oneLine.
+export const COMPOSITION = {
+  oneLine: "ContextOps and ContextBoundary are the specification layer. contextboundary-gw, Sthala and Griha are reference implementations that apply it.",
+  statement: `${gh}/context-stack/blob/main/COMPOSITION.md`
+};
+
 export const projects = [
   {
     id: "context-stack",
     name: "context-stack",
-    layer: "canonical coordination",
-    question: "What terms, decisions, and doctrine govern the stack?",
+    kind: "control plane",
+    role: "Canonical terminology, locked decisions, stack management",
     status: "active",
     repo: `${gh}/context-stack`,
-    summary: "Canonical coordination layer for stack terminology, locked decisions, and family doctrine.",
+    summary: "Control plane for stack terminology, locked decisions, and family doctrine. Not part of the composition.",
     docs: [
       { label: "README.md", url: `${gh}/context-stack/blob/main/README.md` },
       { label: "GLOSSARY.md", url: `${gh}/context-stack/blob/main/GLOSSARY.md` },
@@ -29,8 +36,8 @@ export const projects = [
   {
     id: "contextops",
     name: "ContextOps",
-    layer: "organizational context governance",
-    question: "How does an org govern its AI context?",
+    kind: "specification",
+    role: "Organizational context governance",
     status: "v0.1 active",
     repo: `${gh}/ContextOps`,
     summary: "Vendor-neutral framework for governing enterprise AI context across Capture, Curate, Supply, and Renew.",
@@ -45,8 +52,8 @@ export const projects = [
   {
     id: "contextboundary",
     name: "ContextBoundary",
-    layer: "egress governance",
-    question: "Where is data allowed to go?",
+    kind: "specification",
+    role: "Data egress and action governance",
     status: "v0.1 active",
     repo: `${gh}/ContextBoundary`,
     summary: "Deployment-agnostic egress governance specification for AI data flows, jurisdiction, and vendor zones.",
@@ -63,8 +70,8 @@ export const projects = [
   {
     id: "sthala",
     name: "Sthala",
-    layer: "reference implementation - runtime placement",
-    question: "Where does the AI actually run?",
+    kind: "reference implementation",
+    role: "Governed runtime placement",
     status: "v0.1 Alpha",
     repo: `${gh}/Sthala`,
     summary: "Governed AI runtime placement reference. LLMs narrate; deterministic code computes.",
@@ -78,11 +85,11 @@ export const projects = [
   {
     id: "griha",
     name: "Griha",
-    layer: "reference implementation - worked example",
-    question: "How does governed AI become a working product layer?",
+    kind: "reference implementation",
+    role: "Worked example for home and edge; applies Sthala's narrate/compute constraint",
     status: "proof of concept",
     repo: `${gh}/Griha`,
-    summary: "Product layer above the governance projects. It inherits ContextOps, ContextBoundary, and Sthala principles.",
+    summary: "Worked example for home and edge: governed capabilities composed into a running system. It applies ContextOps and ContextBoundary, and Sthala's narrate/compute constraint.",
     docs: [
       { label: "README.md", url: `${gh}/Griha/blob/main/README.md` }
     ]
@@ -173,7 +180,7 @@ export const resources = [
 ];
 
 export const glossary = [
-  { term: "Context Stack", definition: "The specification layer: ContextOps and ContextBoundary. contextboundary-gw, Sthala and Griha are reference implementations that apply it." },
+  { term: "Context Stack", definition: COMPOSITION.oneLine },
   { term: "ContextOps", definition: "Organizational context governance for enterprise AI systems." },
   { term: "ContextBoundary", definition: "Deployment-agnostic egress governance for AI data flows." },
   { term: "Sthala", definition: "The Context Stack's reference implementation for runtime placement: LLMs narrate, deterministic code computes." },
@@ -200,8 +207,8 @@ export function findResource(uri) {
 
 export function stackOverview() {
   const rows = projects
-    .map((project) => `- ${project.name}: ${project.question} Layer: ${project.layer}. Status: ${project.status}. Repo: ${project.repo}`)
+    .map((project) => `- ${project.name}: ${project.kind}. ${project.role}. Status: ${project.status}. Repo: ${project.repo}`)
     .join("\n");
 
-  return `# Context Stack\n\n> ${SERVER.doctrine}\n\nThe Context Stack is an open-source AI governance stack under github.com/kannanokannan. It separates interpretation from authority: intelligence proposes, governance validates, execution authorizes.\n\n${rows}\n`;
+  return `# Context Stack\n\n> ${SERVER.doctrine}\n\n${COMPOSITION.oneLine}\n\nThe composition is defined once, in COMPOSITION.md: ${COMPOSITION.statement}\n\nThe Context Stack is an open-source AI governance stack under github.com/kannanokannan. It separates interpretation from authority: intelligence proposes, governance validates, execution authorizes.\n\n${rows}\n- contextboundary-gw: reference implementation. Reference gateway and conformance suite. Repo: ${gh}/contextboundary-gw\n`;
 }

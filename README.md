@@ -1,6 +1,6 @@
 # context-stack-mcp
 
-Cloudflare Worker MCP endpoint for the Context Stack: ContextOps, ContextBoundary, Sthala, Griha, and the canonical context-stack doctrine.
+Cloudflare Worker MCP endpoint for the Context Stack. It serves the stack's canonical resources and doctrine to AI clients.
 
 > Probabilistic intelligence must operate inside deterministic governance boundaries.
 
@@ -141,15 +141,11 @@ http method=POST path=/advisor status=200 duration_ms=80 route=advisor
 
 It does not log prompts, tool arguments, assessment answers, or organization-specific content.
 
-## Project Map
+## Part of the Stack
 
-| Project | Layer | Question |
-|---------|-------|----------|
-| context-stack | Canonical coordination | What terms, decisions, and doctrine govern the stack? |
-| ContextOps | Organizational context governance | How does an org govern its AI context? |
-| ContextBoundary | Egress governance | Where is data allowed to go? |
-| Sthala | Governed runtime reference | Where does the AI actually run? |
-| Griha | Product/adoption layer | How does governed AI become a working product layer? |
+ContextOps and ContextBoundary are the specification layer. contextboundary-gw, Sthala and Griha are reference implementations that apply it. The composition is defined once, in [COMPOSITION.md](https://github.com/kannanokannan/context-stack/blob/main/COMPOSITION.md).
+
+context-stack-mcp is not part of the composition. It is the stack's access path: an assistant-facing MCP endpoint that routes agents to each repository's own files.
 
 ## Deployment
 

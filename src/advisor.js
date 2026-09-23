@@ -26,10 +26,10 @@ const ROUTES = Object.freeze({
     documents: ["context-stack://sthala/spec", "context-stack://contextboundary/framework", "context-stack://decisions"]
   },
   delivery: {
-    primary: "Griha",
-    support: "ContextOps",
-    why: "The question is about turning governed AI principles into usable workflows, products, or operating routines.",
-    documents: ["context-stack://griha/readme", "context-stack://contextops/framework", "context-stack://decisions"]
+    primary: "ContextOps",
+    support: "Griha",
+    why: "The question is about turning governed AI principles into usable workflows and operating routines. Start with the ContextOps delivery-model overlays; Griha is a worked example of governed capabilities composed into a running system, not something to adopt.",
+    documents: ["context-stack://contextops/framework", "context-stack://griha/readme", "context-stack://decisions"]
   },
   unsure: {
     primary: "ContextOps",

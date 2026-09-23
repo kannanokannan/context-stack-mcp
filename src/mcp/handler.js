@@ -9,7 +9,7 @@ export const tools = [
   {
     name: "get_stack_overview",
     title: "Get Stack Overview",
-    description: "Return the Context Stack doctrine and project map.",
+    description: "Return the Context Stack doctrine, its composition, and each project's own role.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -19,7 +19,7 @@ export const tools = [
   {
     name: "get_project",
     title: "Get Project",
-    description: "Return a project summary, layer, status, repository, and core documents.",
+    description: "Return a project summary, kind, role, status, repository, and core documents.",
     inputSchema: {
       type: "object",
       required: ["project"],
@@ -324,7 +324,7 @@ function formatProject(projectName) {
   }
 
   const docs = project.docs.map((doc) => `- ${doc.label}: ${doc.url}`).join("\n");
-  return `# ${project.name}\n\nQuestion: ${project.question}\nLayer: ${project.layer}\nStatus: ${project.status}\nRepository: ${project.repo}\n\n${project.summary}\n\nCore documents:\n${docs}\n`;
+  return `# ${project.name}\n\nKind: ${project.kind}\nRole: ${project.role}\nStatus: ${project.status}\nRepository: ${project.repo}\n\n${project.summary}\n\nCore documents:\n${docs}\n`;
 }
 
 function recommendProject(question = "", deliveryModel = "") {
@@ -341,7 +341,8 @@ function recommendProject(question = "", deliveryModel = "") {
     picks.push("Sthala");
   }
   if (matches(text, ["product", "home", "edge", "app", "prototype", "device", "approval gate"])) {
-    picks.push("Griha");
+    // Griha is a worked example, not an entry point: delivery questions start at ContextOps.
+    picks.push("ContextOps", "Griha");
   }
 
   const unique = [...new Set(picks)];
